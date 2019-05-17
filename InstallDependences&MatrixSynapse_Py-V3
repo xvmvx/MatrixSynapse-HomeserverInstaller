@@ -1,0 +1,120 @@
+#!/bin/bash
+
+#######################################
+#   Author : Fabio Orefice Amez       #
+#   Contact : fabiococole@gmail.com   #
+#   OS : CentOS 7                     #
+#######################################
+
+# The objective of this script is automate the installation of Matrix/Synapse Server and its dependences from CentOS7 System.
+
+echo "¡WELCOME TO MATRIX/SYNAPSE HOMESERVER INSTALLER!"
+sleep "2"
+
+echo "Enter your administrative password (It is necessary to perform installation tasks) :"
+read pass
+
+if [ -z $pass ]; then
+    echo "\You have not entered any password"
+    exit
+  else
+    echo "Correct!"
+fi
+
+echo "¡Enter a path to locate Matrix/Synapse files! example --> ( /path/to/dir ) :"
+read path
+
+if [ -z $path ]; then
+    echo "\You have not entered any path"
+    exit
+  else
+    echo "Correct!"
+fi
+
+# Install system dependences for Matrix/Synapse and Python
+echo "Downloading and install enviroment & dependences of MATRIX/SYNAPSE installation, please wait a few minute..."
+sleep "3"
+
+echo $pass | sudo -S yum update -y
+echo $pass | sudo -S yum install -y wget git bzip2
+echo $pass | sudo -S yum install -y epel-release
+echo $pass | sudo -S yum install -y nginx
+
+echo $pass | sudo -S yum install -y libtiff-devel libjpeg-devel libzip-devel freetype-devel \
+                 lcms2-devel libwebp-devel tcl-devel tk-devel redhat-rpm-config \
+                 python-virtualenv libffi-devel openssl-devel bzip2
+
+echo $pass | sudo -S yum groupinstall -y "Development Tools"
+
+# Install Python V-3.6 on CentOS 7 ( CentOS include Python 2.7.5 on system, but... this version is "deprecated" ).
+echo "In this moment, install Python V-3.6.3 please wait a few minute..."
+sleep "3"
+
+echo $pass | sudo -S yum install -y yum-utils
+echo $pass | sudo -S yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+echo $pass | sudo -S yum install -y python36u
+echo $pass | sudo -S yum install -y python36u-devel
+
+
+echo "Installing Synapse homeserver..."
+sleep "3"
+
+# Install synapse homeserver.
+mkdir -p $path/synapse
+virtualenv -p python3.6 $path/synapse/env
+source $path/synapse/env/bin/activate
+pip install --upgrade pip
+pip install --upgrade virtualenv
+pip install --upgrade setuptools
+pip install scrapy
+pip install twisted
+pip install matrix-synapse
+
+# Configure additional parameters of Matrix Server ( First config parameters, TLS certs and Turn VoIP packet ).
+b1=0;
+while [ "$b1" != "1" ]
+  do
+  echo -e "\n- Choose option!. \n
+    1) Create first configuration from your Synapse homeserver.\n
+    2) Create TLS certificates for server from Let's Encrypt. \n
+    3) Download TURN Server ( VoIP implementation for Matrix ). \n
+    4) Exit and finish. \n"
+  read option;
+  case $option in
+    1)
+      echo -e "Insert your domain name (FQDN) example --> (my.domain.com) :";
+      read domain;
+      source $path/synapse/env/bin/activate
+      cd $path/synapse
+      python -m synapse.app.homeserver --server-name $domain --config-path homeserver.yaml --generate-config --report-stats=yes
+
+      ;;
+    2)
+      echo -e "Insert your email :";
+      read email;
+      echo -e "Creating TLS certificates...";
+      sleep "2";
+      echo $pass | sudo -S yum install -y python2-certbot-nginx
+      echo $email | sudo -S certbot --nginx certonly -d $domain
+
+      ;;
+    3)
+      echo "Downloading Turn server...";
+      sleep "2";
+      echo $pass | sudo -S yum install -y libevent-devel
+      cd $path
+      git clone https://github.com/coturn/coturn.git coturn
+      cd coturn
+      echo "In this moment configure, build and install Turn, pls wait a few minute...";
+      sleep "2";
+      ./configure
+      echo $pass | sudo -S make
+      echo $pass | sudo -S make install
+
+      ;;
+    4)
+      b1=1;
+      break;;
+    *) echo "Insert bad option.";;
+  esac
+done
