@@ -4,6 +4,7 @@
 #   Author : Fabio Orefice Amez       #
 #   Contact : fabiococole@gmail.com   #
 #   OS : CentOS 7                     #
+#   LICENSE : GPL Version 3           #
 #######################################
 
 # The objective of this script is automate the installation of Matrix/Synapse Server and its dependences from CentOS7 System.
