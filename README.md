@@ -8,7 +8,7 @@ Before executing the script :
     Change permissons with 'chmod +x InstallDependences&MatrixSynapse_Py-V3.sh'
     
 2. 
-    Never run the script as root! Optionally, you can change the owner with :
+    Never run the script as root! Optionally, you can change the owner with 
     'chown user:user InstallDependences&MatrixSynapse_Py-V3.sh'
     
 3.
